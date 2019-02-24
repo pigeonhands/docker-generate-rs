@@ -13,12 +13,13 @@ fn geterate() {
         DockerFile::new()
         .comment("run stage")
         .from("alpine")
-        .run("cargo install --path .")
-        .cmd(&["myapp"]);
+        .workdir("/app")
+        .comment("te")
+        .copy_from("build", "/src/goapp", "/app/")
+        .entrypoint(&["./goapp"]);
 
     let file = DockerFile::new()
              .dockerfile(build)
-             .newline()
              .dockerfile(run);
 
     println!("{}", file.to_string());

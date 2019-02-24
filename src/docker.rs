@@ -2,15 +2,15 @@
 pub enum DockerFieldType<'a>{
     Docker(DockerFile<'a>),
     r#String(String),
-    Array(&'a [&'a str]),
+    Array(Vec<String>),
     TupleList(&'a[(&'a str, &'a str)]),
-    MultiValue(&'a [&'a str]),
+    MultiValue(Vec<String>),
     Protocal((i32, &'a str)),
     Int(i32),
 }
 
-impl<'a> From<&'a [&'a str]> for DockerFieldType<'a>{
-    fn from(value: &'a [&'a str]) -> Self {
+impl<'a> From<Vec<String>> for DockerFieldType<'a>{
+    fn from(value: Vec<String>) -> Self {
         DockerFieldType::MultiValue(value)
     }
 }
@@ -68,11 +68,7 @@ impl <'a> DockerFieldType<'a>{
                                             .map(|i| format!("\"{}\"", i))
                                             .collect::<Vec<String>>()
                                             .join(", ")),
-            DockerFieldType::MultiValue(arr) =>  format!("[{}]", 
-                                            arr.into_iter()
-                                            .map(|i| format!("\"{}\"", i))
-                                            .collect::<Vec<String>>()
-                                            .join(" ")), 
+            DockerFieldType::MultiValue(arr) => arr.join(" "), 
         }
     }
 }
@@ -134,7 +130,8 @@ impl<'a> DockerFile<'a>{
     }
 
     pub fn cmd(self, args: &'a[&'a str]) -> Self{
-        self.add("CMD", DockerFieldType::MultiValue(args))
+        let arr = args.iter().map(|a| a.to_string()).collect::<Vec<String>>();
+        self.add("CMD", DockerFieldType::Array(arr))
     }
 
     pub fn label(self, labels: &'a[(&'a str, &'a str)])-> Self{
@@ -157,12 +154,25 @@ impl<'a> DockerFile<'a>{
         self.add("WORKDIR", dir.into())
     }
 
-    pub fn newline(self) -> Self{
-        self.add("", "".into())
+    pub fn copy(self, src: &'a str, dest: &'a str) -> Self{
+        self.add("COPY", vec![src.to_string(),dest.to_string()].into())
+    }
+
+    pub fn copy_from(self, from: &'a str, src: &'a str, dest: &'a str) -> Self {
+        self.add("COPY", vec![(&["--from=", from]).join(""), src.to_string(), dest.to_string()].into())
     }
 
     pub fn dockerfile(self, f: DockerFile<'a>) -> Self{
         self.add("", f.into())
+    }
+
+    pub fn entrypoint(self, args: &'a[&'a str]) -> Self{
+        let arr = args.iter().map(|a| a.to_string()).collect::<Vec<String>>();
+        self.add("ENTRYPOINT", DockerFieldType::Array(arr))
+    }
+
+    pub fn newline(self) -> Self{
+        self.add("", "".into())
     }
 
     pub fn newlines(self, ammount: i32) -> Self{
@@ -172,6 +182,7 @@ impl<'a> DockerFile<'a>{
         }
         s
     }
+
 
 
     pub fn to_string(&self) -> String {
