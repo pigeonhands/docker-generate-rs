@@ -1,8 +1,13 @@
 
+
+macro_rules! str_arr_to_string_vec {
+    ($i:ident) => ($i.iter().map(|a| a.to_string()).collect::<Vec<String>>())
+}
+
 pub enum DockerFieldType<'a>{
     Docker(DockerFile<'a>),
     r#String(String),
-    Array(Vec<String>),
+    Array(Vec<&'a str>),
     TupleList(&'a[(&'a str, &'a str)]),
     MultiValue(Vec<String>),
     Protocal((i32, &'a str)),
@@ -15,6 +20,18 @@ impl<'a> From<Vec<String>> for DockerFieldType<'a>{
     }
 }
 
+impl<'a> From<Vec<&'a str>> for DockerFieldType<'a>{
+    fn from(value: Vec<&'a str>) -> Self {
+        DockerFieldType::MultiValue(str_arr_to_string_vec!(value))
+    }
+}
+
+
+impl<'a> From<&'a [&'a str]> for DockerFieldType<'a>{
+    fn from(value: &'a [&'a str]) -> Self {
+        DockerFieldType::MultiValue(str_arr_to_string_vec!(value))
+    }
+}
 
 impl<'a> From<&'a str> for DockerFieldType<'a>{
     fn from(value: &'a str) -> Self {
@@ -130,8 +147,7 @@ impl<'a> DockerFile<'a>{
     }
 
     pub fn cmd(self, args: &'a[&'a str]) -> Self{
-        let arr = args.iter().map(|a| a.to_string()).collect::<Vec<String>>();
-        self.add("CMD", DockerFieldType::Array(arr))
+        self.add("CMD", DockerFieldType::Array(args.to_vec()))
     }
 
     pub fn label(self, labels: &'a[(&'a str, &'a str)])-> Self{
@@ -162,13 +178,16 @@ impl<'a> DockerFile<'a>{
         self.add("COPY", vec![(&["--from=", from]).join(""), src.to_string(), dest.to_string()].into())
     }
 
+    pub fn volume(self, vols: &'a[&'a str]) -> Self{
+        self.add("VOLUME", DockerFieldType::Array(vols.to_vec()))
+    }
+
     pub fn dockerfile(self, f: DockerFile<'a>) -> Self{
         self.add("", f.into())
     }
 
     pub fn entrypoint(self, args: &'a[&'a str]) -> Self{
-        let arr = args.iter().map(|a| a.to_string()).collect::<Vec<String>>();
-        self.add("ENTRYPOINT", DockerFieldType::Array(arr))
+        self.add("ENTRYPOINT", DockerFieldType::Array(args.to_vec()))
     }
 
     pub fn newline(self) -> Self{

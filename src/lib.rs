@@ -1,3 +1,3 @@
 mod docker;
 
-pub use crate::docker::DockerFile;
+pub use crate::docker::{DockerFile,DockerFieldType};
