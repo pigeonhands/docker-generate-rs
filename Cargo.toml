@@ -5,6 +5,7 @@ authors = ["Sam <sam.mackenzie@live.com>"]
 edition = "2018"
 readme="README.md"
 license="MIT"
+repository="https://github.com/BahNahNah/docker-generate-rs"
 description="docker file read/write"
 
 
