@@ -209,7 +209,9 @@ impl<'a> DockerFile<'a>{
 
         for f in self.fields.iter(){
             out.push_str(f.name);
-            out.push(' ');
+            if !f.name.is_empty(){
+                out.push(' ');
+            }
             out.push_str(&f.value.to_string());
             out.push_str("\n\r");
         }
